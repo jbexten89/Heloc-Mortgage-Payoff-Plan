@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="30%" r="80%">
+      <stop offset="0" stop-color="#1A1E24"/>
+      <stop offset="1" stop-color="#07080A"/>
+    </radialGradient>
+    <linearGradient id="m" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5FE0B5"/>
+      <stop offset="1" stop-color="#2FA57F"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <!-- roofline -->
+  <path d="M96 254 L256 118 L416 254" fill="none" stroke="url(#m)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- balance bars stepping down -->
+  <g fill="#3CC79A">
+    <rect x="150" y="248" width="46" height="148" rx="9" opacity=".32"/>
+    <rect x="210" y="284" width="46" height="112" rx="9" opacity=".55"/>
+    <rect x="270" y="320" width="46" height="76" rx="9" opacity=".8"/>
+    <rect x="330" y="356" width="46" height="40" rx="9"/>
+  </g>
+  <!-- baseline -->
+  <rect x="136" y="410" width="254" height="10" rx="5" fill="#2A2F37"/>
+  <!-- amber payoff spark -->
+  <circle cx="390" cy="300" r="15" fill="#E3A04F"/>
+</svg>
