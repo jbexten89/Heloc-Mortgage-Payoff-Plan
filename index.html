@@ -692,7 +692,7 @@ function armedDelete(e,attr,fn){
 $('payList').addEventListener('click',e=>armedDelete(e,'data-del',id=>{S.payments=S.payments.filter(p=>p.id!==id);save();render();toast('Entry deleted')}));
 $('rateList').addEventListener('click',e=>armedDelete(e,'data-delrate',id=>{S.rates=S.rates.filter(r=>r.id!==id);save();render();toast('Rate change deleted')}));
 
-$('payForm').addEventListener('submit',e=>{e.preventDefault();
+$('payForm').addEventListener('submit',e=>{e.preventDefault();S.example=false;
   const amt=parseFloat($('pAmt').value);if(!(amt>0))return;
   const t=curType();
   S.payments.push({id:uid(),type:t,date:$('pDate').value,amount:amt,note:$('pNote').value.trim()});
@@ -705,7 +705,7 @@ document.querySelectorAll('input[name=etype]').forEach(r=>r.addEventListener('ch
 $('loanForm').addEventListener('submit',e=>{e.preventDefault();
   S.loan={name:$('lName').value.trim()||'Home equity line',balance:parseFloat($('lBal').value)||0,start:$('lStart').value,apr:parseFloat($('lApr').value)||0,payment:parseFloat($('lPay').value)||0,startInterest:parseFloat($('lInt').value)||0};
   S.example=false;save();$('pAmt').value=S.loan.payment;render();toast('Loan saved')});
-$('rateForm').addEventListener('submit',e=>{e.preventDefault();
+$('rateForm').addEventListener('submit',e=>{e.preventDefault();S.example=false;
   S.rates.push({id:uid(),date:$('rDate').value,apr:parseFloat($('rApr').value)});save();$('rApr').value='';render();toast('Rate change added')});
 $('extra').addEventListener('input',e=>{S.extra=+e.target.value;save(true);render()});
 $('startMine').addEventListener('click',()=>{
@@ -719,7 +719,7 @@ $('copyBackup').addEventListener('click',()=>{
 $('showRestore').addEventListener('click',()=>{$('restoreBox').hidden=!$('restoreBox').hidden});
 function parseBackup(text){const d=JSON.parse(text);if(!d||!d.loan||!Array.isArray(d.payments))throw 0;return d}
 function applyBackup(d){
-  const keepMtg=S.mtg;S=Object.assign({rates:[],extra:0,planned:[]},d);if(!d.mtg&&keepMtg)S.mtg=keepMtg;
+  const keepMtg=S.mtg;S=Object.assign({rates:[],extra:0,planned:[]},d);if(d.example!==true)S.example=false;if(!d.mtg&&keepMtg)S.mtg=keepMtg;
   save();boot();$('restoreBox').hidden=true;$('restoreConfirm').hidden=true;toast('Backup restored');
 }
 // File backup: Claude's save prompt inside Claude, a normal download elsewhere (GitHub Pages)
@@ -882,15 +882,15 @@ function header(){
   const v=S.view==='mtg';$('viewHeloc').hidden=v;$('viewMtg').hidden=!v;
   $('viewTitle').innerHTML='HELOC Mortgage Payoff Plan<small id="loanName">'+esc(v?(MD().name||'Mortgage'):(S.loan.name||'Home equity line'))+'</small>';
 }
-$('mLoanForm').addEventListener('submit',e=>{e.preventDefault();const M=MD();
+$('mLoanForm').addEventListener('submit',e=>{e.preventDefault();S.example=false;const M=MD();
   Object.assign(M,{name:$('mlName').value.trim(),balance:parseFloat($('mlBal').value)||0,start:$('mlStart').value,rate:parseFloat($('mlRate').value)||0,
     day:Math.min(28,Math.max(1,parseInt($('mlDay').value)||1)),pi:parseFloat($('mlPI').value)||0,escrow:parseFloat($('mlEsc').value)||0});
   save();renderMtg();fillMPay();$('mSettings').open=false;toast('Mortgage saved')});
-$('mPayForm').addEventListener('submit',e=>{e.preventDefault();const M=MD();
+$('mPayForm').addEventListener('submit',e=>{e.preventDefault();S.example=false;const M=MD();
   M.payments.push({id:uid(),date:$('mpDate').value,principal:parseFloat($('mpPrin').value)||0,interest:parseFloat($('mpInt').value)||0,escrow:parseFloat($('mpEsc').value)||0,note:$('mpNote').value.trim()});
   save();$('mpNote').value='';renderMtg();fillMPay();toast('Payment added')});
 $('mPayList').addEventListener('click',e=>armedDelete(e,'data-mdel',id=>{const M=MD();M.payments=M.payments.filter(p=>p.id!==id);save();renderMtg();fillMPay();toast('Payment deleted')}));
-$('mPlanForm').addEventListener('submit',e=>{e.preventDefault();const a=parseFloat($('mfAmt').value);if(!(a>0))return;const M=MD();
+$('mPlanForm').addEventListener('submit',e=>{e.preventDefault();S.example=false;const a=parseFloat($('mfAmt').value);if(!(a>0))return;const M=MD();
   (M.planned=M.planned||[]).push({id:uid(),date:$('mfDate').value,amount:a,note:$('mfNote').value.trim()});
   save();$('mfAmt').value='';$('mfNote').value='';renderMtg();toast('Future payment added')});
 $('mPlanList').addEventListener('click',e=>armedDelete(e,'data-mdelplan',id=>{const M=MD();M.planned=M.planned.filter(p=>p.id!==id);save();renderMtg();toast('Future payment deleted')}));
@@ -905,7 +905,7 @@ $('pDate').value=iso(todayDay());$('pAmt').value=S.loan.payment||'';
 $('rDate').value=iso(todayDay());$('extra').value=S.extra||0;
 if(!Array.isArray(S.planned)) S.planned=[];
 $('fDate').value=iso(addMonth(todayDay(),2,15));
-$('planForm').addEventListener('submit',e=>{e.preventDefault();
+$('planForm').addEventListener('submit',e=>{e.preventDefault();S.example=false;
   const a=parseFloat($('fAmt').value);if(!(a>0))return;
   S.planned.push({id:uid(),date:$('fDate').value,amount:a,note:$('fNote').value.trim()});
   save();$('fAmt').value='';$('fNote').value='';render();toast('Future payment added')});
