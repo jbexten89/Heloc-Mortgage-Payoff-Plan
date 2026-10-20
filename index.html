@@ -260,16 +260,6 @@ table.sched{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixe
       <button class="full" type="submit">Add rate change</button>
     </form>
     <div class="list" id="rateList"></div>
-    <h2>Backup</h2>
-    <p class="sub" style="margin:0">Your data stays in this browser only. Copy a backup to keep it safe, or paste one to restore.</p>
-    <div class="btns">
-      <button type="button" id="copyBackup">Copy backup</button>
-      <button type="button" id="showRestore" class="ghost">Restore…</button>
-    </div>
-    <div id="restoreBox" hidden style="display:flex;flex-direction:column;gap:8px">
-      <textarea id="restoreText" rows="4" placeholder="Paste backup text here"></textarea>
-      <button type="button" class="primary" id="doRestore">Restore from backup</button>
-    </div>
   </details>
   </div>
 
@@ -391,6 +381,28 @@ table.sched{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixe
       </form>
     </details>
   </div>
+
+  <details class="panel" id="backupPanel">
+    <summary><h2>Backup</h2></summary>
+    <p class="sub" style="margin:0">One backup holds both your HELOC and your mortgage. Save a file now and then, and use it to restore here or on another device.</p>
+    <div class="btns">
+      <button type="button" class="primary" id="saveFile">Save backup file</button>
+      <button type="button" id="openFile">Restore from file</button>
+      <input type="file" id="fileIn" accept=".json,application/json,text/plain" hidden>
+    </div>
+    <div class="btns">
+      <button type="button" class="ghost" id="copyBackup">Copy backup text</button>
+      <button type="button" id="showRestore" class="ghost">Paste backup text…</button>
+    </div>
+    <div id="restoreBox" hidden style="display:flex;flex-direction:column;gap:8px">
+      <textarea id="restoreText" rows="4" placeholder="Paste backup text here"></textarea>
+      <button type="button" class="primary" id="doRestore">Restore from backup</button>
+    </div>
+    <div class="alert" id="restoreConfirm" hidden>
+      <span id="restoreMsg"></span>
+      <div class="btns" style="margin-top:8px"><button type="button" id="restoreYes" style="background:var(--amber-ink);color:var(--amber);border:0">Replace my data</button><button type="button" id="restoreNo" class="ghost" style="color:var(--amber-ink);border-color:var(--amber-ink)">Cancel</button></div>
+    </div>
+  </details>
 </div>
 <div class="toast" id="toast" role="status"></div>
 
@@ -705,9 +717,45 @@ $('copyBackup').addEventListener('click',()=>{
   navigator.clipboard.writeText(txt).then(()=>toast('Backup copied'),()=>{$('restoreBox').hidden=false;$('restoreText').value=txt;$('restoreText').select();toast('Select and copy the text')});
 });
 $('showRestore').addEventListener('click',()=>{$('restoreBox').hidden=!$('restoreBox').hidden});
+function parseBackup(text){const d=JSON.parse(text);if(!d||!d.loan||!Array.isArray(d.payments))throw 0;return d}
+function applyBackup(d){
+  const keepMtg=S.mtg;S=Object.assign({rates:[],extra:0,planned:[]},d);if(!d.mtg&&keepMtg)S.mtg=keepMtg;
+  save();boot();$('restoreBox').hidden=true;$('restoreConfirm').hidden=true;toast('Backup restored');
+}
+// File backup: Claude's save prompt inside Claude, a normal download elsewhere (GitHub Pages)
+$('saveFile').addEventListener('click',async()=>{
+  const t=new Date(),stamp=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+  const name='payoff-plan-backup-'+stamp+'.json',data=JSON.stringify(S,null,1);
+  let dl=null;
+  try{if(window.claude&&window.claude.use) dl=await window.claude.use('downloads')}catch(e){}
+  if(dl){
+    try{await dl.save({filename:name,data});toast('Backup file saved')}
+    catch(e){if(e&&e.code==='declined')toast('Save canceled');else if(e&&e.code==='rate_limited')toast('A save is already open');else toast('Couldn’t save the file. Use Copy backup text instead.')}
+    return;
+  }
+  try{const url=URL.createObjectURL(new Blob([data],{type:'application/json'}));
+    const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),4000);toast('Backup file saved')}
+  catch(e){toast('Couldn’t save the file. Use Copy backup text instead.')}
+});
+let pending=null;
+$('openFile').addEventListener('click',()=>{$('fileIn').value='';$('fileIn').click()});
+$('fileIn').addEventListener('change',e=>{
+  const f=e.target.files&&e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{try{pending=parseBackup(String(r.result));
+    const n=pending.payments.length,m=pending.mtg&&+pending.mtg.balance>0;
+    const when=pending.updated?' from '+new Date(pending.updated).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'';
+    $('restoreMsg').textContent='Restore this backup'+when+'? It has '+n+' HELOC entr'+(n===1?'y':'ies')+(m?' and your mortgage':'')+', and replaces what’s in the app now.';
+    $('restoreConfirm').hidden=false}
+    catch(err){toast('That file isn’t a valid backup')}};
+  r.onerror=()=>toast('Couldn’t read that file');
+  r.readAsText(f);
+});
+$('restoreYes').addEventListener('click',()=>{if(pending)applyBackup(pending);pending=null});
+$('restoreNo').addEventListener('click',()=>{pending=null;$('restoreConfirm').hidden=true});
 $('doRestore').addEventListener('click',()=>{
-  try{const d=JSON.parse($('restoreText').value);if(!d.loan||!Array.isArray(d.payments))throw 0;
-    const keepMtg=S.mtg;S=Object.assign({rates:[],extra:0,planned:[]},d);if(!d.mtg&&keepMtg)S.mtg=keepMtg;save();fillLoanForm();$('extra').value=S.extra;fillMLoan();$('mExtra').value=MD().extra||0;render();renderMtg();fillMPay();$('restoreBox').hidden=true;toast('Backup restored')}
+  try{applyBackup(parseBackup($('restoreText').value))}
   catch(e){toast('That text isn’t a valid backup')}
 });
 /* ---------- Mortgage ---------- */
