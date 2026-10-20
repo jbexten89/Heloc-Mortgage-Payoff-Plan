@@ -50,6 +50,10 @@ h2{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;
 .stat.good b{color:var(--mint)}
 .chart{position:relative;min-height:220px}
 .chart svg{display:block;width:100%}
+.ct{margin:0;font-size:20px;font-weight:800;letter-spacing:-.01em;color:var(--fg)}
+.legend.lg2{font-size:15px;gap:22px;margin-top:-4px}
+.legend.lg2 i{width:18px;height:5px;border-radius:3px;margin-right:9px}
+.chart text{font-family:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);font-weight:600}
 .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
 .whatif{display:flex;flex-direction:column;gap:10px}
@@ -176,13 +180,9 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   </section>
 
   <section class="panel">
-    <h2>Balance over time</h2>
+    <h3 class="ct">Balance over time</h3>
+    <div class="legend lg2" id="chartLg"></div>
     <div class="chart" id="chart"></div>
-    <div class="legend">
-      <span><i style="background:var(--mint)"></i>Actual</span>
-      <span><i style="background:var(--muted)"></i>Plan</span>
-      <span id="lgExtra"><i style="background:var(--amber)"></i>With extra</span>
-    </div>
   </section>
 
   <section class="panel whatif">
@@ -295,13 +295,9 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
     </section>
 
     <section class="panel" id="mChartPanel">
-      <h2>Balance over time</h2>
+      <h3 class="ct">Balance over time</h3>
+      <div class="legend lg2" id="mChartLg"></div>
       <div class="chart" id="mChart"></div>
-      <div class="legend">
-        <span><i style="background:var(--mint)"></i>Actual</span>
-        <span><i style="background:var(--muted)"></i>Plan</span>
-        <span id="mLgExtra"><i style="background:var(--amber)"></i>With extra</span>
-      </div>
     </section>
 
     <section class="panel whatif" id="mWhatIf">
@@ -585,7 +581,6 @@ function render(){
   }else if(plus.ok){
     $('wSaved').textContent='All of it';$('wMonths').textContent='Pays off';$('wDate').textContent=fmtMonth(plus.end);
   }else{['wSaved','wMonths','wDate'].forEach(k=>$(k).textContent='–')}
-  $('lgExtra').hidden=!hasWhatIf;
   drawChart(H,base,hasWhatIf?plus:null,today);
   renderList(H);renderRates();renderPlans();renderInterest(H,base,plus,hasWhatIf);header();
   renderSchedule(document.querySelector('input[name=scen]:checked').value==='base'||!hasWhatIf?base:plus,apr,!hasWhatIf||document.querySelector('input[name=scen]:checked').value==='base');
@@ -642,35 +637,41 @@ function renderPlans(){
 }
 
 function drawChart(H,base,plus,today,boxId){
-  const box=$(boxId||'chart'),W=Math.max(280,box.clientWidth||600),Ht=230,pl=52,pr=12,pt=10,pb=26;
-  const series=[H.pts,base.ok?base.pts:[],plus&&plus.ok?plus.pts:[]];
-  const all=series.flat();
-  const x0=H.start,x1=Math.max(today+30,...all.map(p=>p.d));
+  const id=boxId||'chart',box=$(id),lg=$(id+'Lg'),mtg=id==='mChart';
+  const W=Math.max(280,box.clientWidth||600),Ht=240,pr=10,pt=12,pb=28;
+  // Your plan = with what-ifs when set, otherwise the plan. Comparison line only when what-ifs exist.
+  const mine=plus&&plus.pts.length>1?plus:base,other=plus?base:null;
+  const ser=[mine.pts,other?other.pts:[]].filter(p=>p.length);
+  if(!ser.length){box.innerHTML='';lg.innerHTML='';return}
+  const all=ser.flat();
+  const x0=Math.min(...all.map(p=>p.d)),x1=Math.max(x0+60,...all.map(p=>p.d))+20;
   const ymaxRaw=Math.max(...all.map(p=>p.b))||1;
-  const step=niceStep(ymaxRaw/4),ymax=Math.ceil(ymaxRaw/step)*step;
+  const step=niceStep(ymaxRaw/3),ymax=Math.ceil(ymaxRaw*1.08/step)*step;
+  const lab=v=>money(v);
+  const pl=14+Math.max(...[0,step,ymax].map(v=>lab(v).length))*7.2;
   const X=d=>pl+(d-x0)/(x1-x0)*(W-pl-pr),Y=b=>pt+(1-b/ymax)*(Ht-pt-pb);
-  const path=pts=>pts.map((p,i)=>(i?'L':'M')+X(p.d).toFixed(1)+' '+Y(p.b).toFixed(1)).join(' ');
+  const ext=pts=>{const q=pts.slice();const l=q[q.length-1];if(l.b<=0.005&&l.d<x1)q.push({d:x1,b:0});return q};
+  const line=pts=>pts.map((p,i)=>(i?'L':'M')+X(p.d).toFixed(1)+' '+Y(p.b).toFixed(1)).join(' ');
+  const area=pts=>line(pts)+` L${X(pts[pts.length-1].d).toFixed(1)} ${Y(0).toFixed(1)} L${X(pts[0].d).toFixed(1)} ${Y(0).toFixed(1)} Z`;
   let g='';
-  for(let v=0;v<=ymax+1;v+=step){
+  for(let v=0;v<=ymax+0.5;v+=step){
     g+=`<line x1="${pl}" x2="${W-pr}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="1"/>`;
-    g+=`<text x="${pl-8}" y="${Y(v)+4}" text-anchor="end" fill="var(--muted)" font-size="11" font-weight="600">${v>=1000?'$'+(v/1000)+'k':'$'+v}</text>`;
+    g+=`<text x="${pl-10}" y="${Y(v)+4}" text-anchor="end" fill="var(--muted)" font-size="12">${lab(v)}</text>`;
   }
-  const y0=new Date(x0*DAY).getUTCFullYear(),y1=new Date(x1*DAY).getUTCFullYear();
-  const span=y1-y0,every=span>12?5:span>6?2:1;
-  for(let y=y0+1;y<=y1;y++){if((y-y0)%every&&span>1)continue;const d=Date.UTC(y,0,1)/DAY;if(d<=x0||d>=x1)continue;
-    g+=`<text x="${X(d)}" y="${Ht-6}" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="600">${y}</text>`;
-    g+=`<line x1="${X(d)}" x2="${X(d)}" y1="${Ht-pb}" y2="${Ht-pb+4}" stroke="var(--dim)"/>`}
-  const hp=H.pts.concat(H.pts.length?[{d:Math.max(today,H.pts[H.pts.length-1].d),b:H.bal}]:[]);
-  const area=path(hp)+` L${X(hp[hp.length-1].d).toFixed(1)} ${Y(0)} L${X(hp[0].d).toFixed(1)} ${Y(0)} Z`;
-  let s=`<svg width="${W}" height="${Ht}" viewBox="0 0 ${W} ${Ht}" role="img" aria-label="Loan balance over time">${g}`;
-  s+=`<line x1="${X(today)}" x2="${X(today)}" y1="${pt}" y2="${Ht-pb}" stroke="var(--dim)" stroke-dasharray="2 3"/>`;
-  s+=`<text x="${X(today)+4}" y="${pt+10}" fill="var(--dim)" font-size="10" font-weight="700">TODAY</text>`;
-  s+=`<path d="${area}" fill="var(--mint-soft)" stroke="none"/>`;
-  if(base.ok&&base.pts.length>1) s+=`<path d="${path(base.pts)}" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="5 4"/>`;
-  if(plus&&plus.ok&&plus.pts.length>1) s+=`<path d="${path(plus.pts)}" fill="none" stroke="var(--amber)" stroke-width="2" stroke-dasharray="5 4"/>`;
-  s+=`<path d="${path(hp)}" fill="none" stroke="var(--mint)" stroke-width="2.5" stroke-linejoin="round"/>`;
-  s+=`<circle cx="${X(hp[hp.length-1].d)}" cy="${Y(H.bal)}" r="4.5" fill="var(--mint)" stroke="var(--panel)" stroke-width="2"/>`;
+  g+=`<line x1="${pl}" x2="${W-pr}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--muted)" stroke-opacity=".5" stroke-width="1.2"/>`;
+  const ya=new Date(x0*DAY).getUTCFullYear(),yb=new Date(x1*DAY).getUTCFullYear(),span=yb-ya;
+  const every=span>20?5:span>10?2:1;
+  for(let y=ya+1;y<=yb;y++){if((y)%every)continue;const d=Date.UTC(y,0,1)/DAY;if(d<=x0||d>=x1)continue;
+    g+=`<line x1="${X(d)}" x2="${X(d)}" y1="${Y(0)}" y2="${Y(0)+5}" stroke="var(--muted)" stroke-opacity=".5"/>`;
+    g+=`<text x="${X(d)}" y="${Ht-6}" text-anchor="middle" fill="var(--muted)" font-size="12">${y}</text>`}
+  let s=`<svg width="${W}" height="${Ht}" viewBox="0 0 ${W} ${Ht}" role="img" aria-label="Projected balance over time">${g}`;
+  if(other&&other.pts.length>1){const q=ext(other.pts);
+    s+=`<path d="${area(q)}" fill="var(--amber)" fill-opacity=".14" stroke="none"/><path d="${line(q)}" fill="none" stroke="var(--amber)" stroke-width="2.2" stroke-linejoin="round"/>`}
+  const m=ext(mine.pts);
+  s+=`<path d="${area(m)}" fill="var(--mint)" fill-opacity=".26" stroke="none"/><path d="${line(m)}" fill="none" stroke="var(--mint)" stroke-width="2.4" stroke-linejoin="round"/>`;
+  if(mine.ok&&mine.rows.length){const e=mine.end;s+=`<circle cx="${X(e)}" cy="${Y(0)}" r="5" fill="var(--mint)" stroke="var(--panel)" stroke-width="2.5"><title>Paid off ${fmtMonth(e)}</title></circle>`}
   box.innerHTML=s+'</svg>';
+  lg.innerHTML=`<span><i style="background:var(--mint)"></i>Your plan</span>`+(other?`<span><i style="background:var(--amber)"></i>${mtg?'Minimum only':'Without extra'}</span>`:'');
 }
 function niceStep(r){const p=Math.pow(10,Math.floor(Math.log10(r||1))),f=r/p;return (f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*p}
 
@@ -846,7 +847,6 @@ function renderMtg(){
     const ms=base.months-plus.months;$('mwMonths').textContent=ms>=12?(Math.floor(ms/12)+'y '+(ms%12)+'m'):ms+' mo';
     $('mwDate').textContent=fmtMonth(plus.end);
   }else ['mwSaved','mwMonths','mwDate'].forEach(k=>$(k).textContent='–');
-  $('mLgExtra').hidden=!hasW;
   drawChart(H,base,hasW?plus:null,today,'mChart');
   // interest
   $('miPaid').textContent=money(H.int);
