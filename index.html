@@ -121,6 +121,8 @@ table.sched{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixe
 .confirm{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:12px;font-weight:700;font-size:14px}
 .view{display:flex;flex-direction:column;gap:16px}
 .tabs label{font-size:14px;padding:10px 4px}
+.tabs{position:sticky;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:20;box-shadow:0 0 0 8px var(--bg),0 10px 18px 6px rgba(0,0,0,.55)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:19;background:var(--bg)}
 .mbar{height:18px}
 .mbar .mp{background:var(--mint)}.mbar .mi{background:var(--muted)}.mbar .me{background:var(--amber)}
 .mkey{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
@@ -901,7 +903,8 @@ $('mExtra').addEventListener('input',e=>{MD().extra=+e.target.value;save(true);r
 $('mExStart').addEventListener('change',e=>{MD().extraStart=e.target.value||'';save();renderMtg();toast(e.target.value?'Extra starts '+fmtDate(toDay(e.target.value)):'Extra starts with next payment')});
 $('mExStartClear').addEventListener('click',()=>{MD().extraStart='';$('mExStart').value='';save();renderMtg();toast('Extra starts with next payment')});
 document.querySelectorAll('input[name=mscen]').forEach(r=>r.addEventListener('change',renderMtg));
-document.querySelectorAll('input[name=view]').forEach(r=>r.addEventListener('change',()=>{S.view=r.value;save();header();render();renderMtg();fillMPay()}));
+document.querySelectorAll('input[name=view]').forEach(r=>r.addEventListener('change',()=>{S.view=r.value;save();header();render();renderMtg();fillMPay();
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;window.scrollTo({top:0,behavior:reduce?'auto':'smooth'})}));
 let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{render();renderMtg()},120)});
 
 $('pDate').value=iso(todayDay());$('pAmt').value=S.loan.payment||'';
