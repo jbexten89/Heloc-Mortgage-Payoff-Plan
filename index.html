@@ -295,13 +295,6 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
       <div class="alert" id="mUnder" hidden></div>
     </section>
 
-    <section class="panel" id="mNextPanel">
-      <h2>Next payment</h2>
-      <div class="whatif-row"><span class="sub num" id="mNextDate"></span><b class="num" id="mNextTotal">$0</b></div>
-      <div class="ibar mbar" id="mNextBar"></div>
-      <div class="mkey" id="mNextKey"></div>
-    </section>
-
     <section class="panel" id="mChartPanel">
       <h2>Balance over time</h2>
       <div class="chart" id="mChart"></div>
@@ -345,6 +338,13 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
         <div class="stat" id="miPlusBox"><b class="num" id="miPlus">–</b><span>Still to pay with what-ifs</span></div>
         <div class="stat good" id="miSavedBox"><b class="num" id="miSaved">–</b><span>Saved by what-ifs</span></div>
       </div>
+    </section>
+
+    <section class="panel" id="mNextPanel">
+      <h2>Next payment</h2>
+      <div class="whatif-row"><span class="sub num" id="mNextDate"></span><b class="num" id="mNextTotal">$0</b></div>
+      <div class="ibar mbar" id="mNextBar"></div>
+      <div class="mkey" id="mNextKey"></div>
     </section>
 
     <section class="panel" id="mLogPanel">
