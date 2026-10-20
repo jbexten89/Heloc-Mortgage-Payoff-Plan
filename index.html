@@ -146,7 +146,7 @@ table.sched{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixe
   <div class="view" id="viewHeloc">
   <div class="banner" id="exampleBanner" hidden>
     <span>Showing example numbers. Enter your loan to start tracking.</span>
-    <button id="startMine" type="button">Start with my loan</button>
+    <span class="btns"><button id="startMine" type="button">Start with my loan</button><button id="dismissEx" type="button">Hide</button></span>
   </div>
 
   <section class="panel">
@@ -547,7 +547,7 @@ function project(H,apr,pay,lumps){
 
 function render(){
   const H=history(),today=todayDay(),apr=aprOn(today),pay=+S.loan.payment,extra=+S.extra||0;
-  $('exampleBanner').hidden=!S.example;
+  $('exampleBanner').hidden=!S.example||S.exampleHidden||mReady()||!/\(example\)/.test(S.loan.name||'');
   $('loanName').textContent=S.loan.name||'Home equity line';
   $('asOf').textContent='As of '+fmtDate(today);
   $('balance').textContent=money(H.bal,true);
@@ -708,6 +708,7 @@ $('loanForm').addEventListener('submit',e=>{e.preventDefault();
 $('rateForm').addEventListener('submit',e=>{e.preventDefault();S.example=false;
   S.rates.push({id:uid(),date:$('rDate').value,apr:parseFloat($('rApr').value)});save();$('rApr').value='';render();toast('Rate change added')});
 $('extra').addEventListener('input',e=>{S.extra=+e.target.value;save(true);render()});
+$('dismissEx').addEventListener('click',()=>{S.exampleHidden=true;save();render()});
 $('startMine').addEventListener('click',()=>{
   S={example:false,loan:{name:'Home equity line',start:iso(todayDay()),balance:0,apr:0,payment:0},rates:[],payments:[],planned:[],extra:+S.extra||0,mtg:S.mtg,view:S.view};
   fillLoanForm();$('lBal').value='';$('lApr').value='';$('lPay').value='';
