@@ -315,6 +315,11 @@ table.sched{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixe
       <h2>What if I pay extra principal?</h2>
       <div class="whatif-row"><span class="sub">Extra principal each month</span><b class="num" id="mExtraOut">$0</b></div>
       <input type="range" id="mExtra" min="0" max="2000" step="25" value="0" aria-label="Extra monthly principal">
+      <form class="row" id="mExStartForm" onsubmit="return false">
+        <label class="f">Start extra on<input type="date" id="mExStart"></label>
+        <div class="f" style="justify-content:flex-end"><button type="button" class="ghost" id="mExStartClear">Start with next payment</button></div>
+      </form>
+      <p class="sub" style="margin:0" id="mExStartNote"></p>
       <div class="compare">
         <div class="stat good"><b class="num" id="mwSaved">–</b><span>Interest saved</span></div>
         <div class="stat good"><b class="num" id="mwMonths">–</b><span>Paid off sooner</span></div>
@@ -724,6 +729,7 @@ function mProject(H,extra,lumps){
   let b=H.bal,p=nextAfter(H.last,day),interest=0;
   const plan=(lumps||[]).map(l=>({d:toDay(l.date),a:+l.amount,note:l.note})).sort((x,y)=>x.d-y.d);
   let li=0;const rows=[],pts=[{d:H.last,b}];
+  const exStart=M.extraStart?toDay(M.extraStart):-Infinity;
   const fail={rows,ok:false,interest:Infinity,months:Infinity,end:Infinity,pts};
   if(b<=0.005) return {rows,ok:true,interest:0,months:0,end:todayDay(),pts};
   while(rows.length<600){
@@ -731,8 +737,9 @@ function mProject(H,extra,lumps){
     let lump=0;const notes=[];
     while(li<plan.length&&plan[li].d<=p){lump+=plan[li].a;if(plan[li].note)notes.push(plan[li].note);li++}
     const sched=pi-i;
-    if(sched<=0&&extra+lump<=0) return fail;
-    let pr=Math.min(b,Math.max(0,sched)+extra+lump);
+    const ex=p>=exStart?extra:0; // extra principal only from the chosen start date
+    if(sched<=0&&ex+lump<=0&&!(extra>0&&p<exStart)) return fail;
+    let pr=Math.min(b,Math.max(0,sched)+ex+lump);
     if(b-pr<1) pr=b; // fold rounding pennies into the last payment
     b=Math.max(0,b-pr);interest+=i;
     rows.push({d:p,interest:i,principal:pr,lump,escrow:escAmt,total:i+pr+escAmt,bal:b,notes});
@@ -773,6 +780,8 @@ function renderMtg(){
   // what-if
   $('mExtraOut').textContent=money(extra);
   $('mwTotal').textContent=money(+M.pi+(+M.escrow||0)+extra);
+  const firstEx=extra>0?plus.rows.find(r=>M.extraStart?r.d>=toDay(M.extraStart):true):null;
+  $('mExStartNote').textContent=!extra?'Set an extra amount to choose when it starts.':firstEx?'Extra '+money(extra)+' starts with the '+fmtMonth(firstEx.d)+' payment.':'The start date is after payoff, so the extra never applies.';
   if(base.ok&&plus.ok){
     $('mwSaved').textContent=money(Math.max(0,base.interest-plus.interest));
     const ms=base.months-plus.months;$('mwMonths').textContent=ms>=12?(Math.floor(ms/12)+'y '+(ms%12)+'m'):ms+' mo';
@@ -795,7 +804,7 @@ function renderMtg(){
   // schedule
   $('mScenSeg').hidden=!hasW;
   const isBase=!hasW||mScenBase(),S2=isBase?base:plus,T=$('mSched');
-  $('mSchedNote').textContent=(isBase?'Plan: ':'With what-ifs: ')+money(+M.pi,true)+' principal + interest'+(isBase||!extra?'':' + '+money(extra)+' extra')+(isBase||!lumps.length?'':' + one-time payments')+' at '+(+M.rate).toFixed(3)+'%. Escrow is shown but doesn’t lower the balance.';
+  $('mSchedNote').textContent=(isBase?'Plan: ':'With what-ifs: ')+money(+M.pi,true)+' principal + interest'+(isBase||!extra?'':' + '+money(extra)+' extra'+(M.extraStart?' from '+fmtMonth(toDay(M.extraStart)):''))+(isBase||!lumps.length?'':' + one-time payments')+' at '+(+M.rate).toFixed(3)+'%. Escrow is shown but doesn’t lower the balance.';
   if(!S2.ok){T.innerHTML='<tr><td class="empty">This payment doesn’t cover the interest, so there is no payoff schedule.</td></tr>';header();return}
   const narrow=(T.parentNode.clientWidth||innerWidth)<480;
   const m=v=>narrow?money(v):money(v,true);
@@ -813,7 +822,7 @@ function renderMtg(){
   T.innerHTML=h;
   header();
 }
-function fillMLoan(){const M=MD();$('mlName').value=M.name||'';$('mlBal').value=M.balance||'';$('mlStart').value=M.start||'';$('mlRate').value=M.rate||'';$('mlDay').value=M.day||1;$('mlPI').value=M.pi||'';$('mlEsc').value=M.escrow||''}
+function fillMLoan(){const M=MD();$('mlName').value=M.name||'';$('mlBal').value=M.balance||'';$('mlStart').value=M.start||'';$('mlRate').value=M.rate||'';$('mlDay').value=M.day||1;$('mlPI').value=M.pi||'';$('mlEsc').value=M.escrow||'';$('mExStart').value=M.extraStart||''}
 function fillMPay(){
   if(!mReady())return;
   const M=MD(),H=mHistory(),extra=+M.extra||0,hasW=extra>0||(M.planned||[]).length;
@@ -838,6 +847,8 @@ $('mPlanForm').addEventListener('submit',e=>{e.preventDefault();const a=parseFlo
   save();$('mfAmt').value='';$('mfNote').value='';renderMtg();toast('Future payment added')});
 $('mPlanList').addEventListener('click',e=>armedDelete(e,'data-mdelplan',id=>{const M=MD();M.planned=M.planned.filter(p=>p.id!==id);save();renderMtg();toast('Future payment deleted')}));
 $('mExtra').addEventListener('input',e=>{MD().extra=+e.target.value;save(true);renderMtg()});
+$('mExStart').addEventListener('change',e=>{MD().extraStart=e.target.value||'';save();renderMtg();toast(e.target.value?'Extra starts '+fmtDate(toDay(e.target.value)):'Extra starts with next payment')});
+$('mExStartClear').addEventListener('click',()=>{MD().extraStart='';$('mExStart').value='';save();renderMtg();toast('Extra starts with next payment')});
 document.querySelectorAll('input[name=mscen]').forEach(r=>r.addEventListener('change',renderMtg));
 document.querySelectorAll('input[name=view]').forEach(r=>r.addEventListener('change',()=>{S.view=r.value;save();header();render();renderMtg();fillMPay()}));
 let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{render();renderMtg()},120)});
