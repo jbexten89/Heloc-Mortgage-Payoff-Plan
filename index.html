@@ -126,6 +126,11 @@ table.sched{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixe
 .sync.warn{color:var(--amber)}
 #exampleBanner,#mSetupBanner,#underwater,#mUnder{display:none!important}
 .confirm{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:12px;font-weight:700;font-size:14px}
+.bkgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.bkgrid button{width:100%;min-height:48px;padding:10px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#backupPanel>*+*{margin-top:14px}
+.exnext{display:flex;flex-direction:column;justify-content:flex-end;min-width:0}
+.exnext button{width:100%;height:46px;padding:0 8px;white-space:nowrap}
 .view{display:flex;flex-direction:column;gap:16px}
 .tabs label{font-size:14px;padding:10px 4px}
 .tabbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);margin-inline:calc(-1 * max(16px, env(safe-area-inset-left,0px)));padding:6px max(16px, env(safe-area-inset-right,0px)) 8px max(16px, env(safe-area-inset-left,0px));margin-block:-6px -8px;box-shadow:0 10px 16px -8px rgba(0,0,0,.7)}
@@ -306,7 +311,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
       <input type="range" id="mExtra" min="0" max="2000" step="25" value="0" aria-label="Extra monthly principal">
       <form class="row" id="mExStartForm" onsubmit="return false">
         <label class="f">Start extra on<input type="date" id="mExStart"></label>
-        <div class="f" style="justify-content:flex-end"><button type="button" class="ghost" id="mExStartClear">Start with next payment</button></div>
+        <div class="f exnext"><button type="button" class="ghost" id="mExStartClear">Next payment</button></div>
       </form>
       <p class="sub" style="margin:0" id="mExStartNote"></p>
       <div class="compare">
@@ -391,14 +396,12 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   <details class="panel" id="backupPanel">
     <summary><h2>Backup</h2></summary>
     <p class="sub" style="margin:0">One backup holds both your HELOC and your mortgage. Save a file now and then, and use it to restore here or on another device.</p>
-    <div class="btns">
+    <div class="bkgrid">
       <button type="button" class="primary" id="saveFile">Save backup file</button>
       <button type="button" id="openFile">Restore from file</button>
-      <input type="file" id="fileIn" accept=".json,application/json,text/plain" hidden>
-    </div>
-    <div class="btns">
       <button type="button" class="ghost" id="copyBackup">Copy backup text</button>
-      <button type="button" id="showRestore" class="ghost">Paste backup text…</button>
+      <button type="button" id="showRestore" class="ghost">Paste backup text</button>
+      <input type="file" id="fileIn" accept=".json,application/json,text/plain" hidden>
     </div>
     <div id="restoreBox" hidden style="display:flex;flex-direction:column;gap:8px">
       <textarea id="restoreText" rows="4" placeholder="Paste backup text here"></textarea>
