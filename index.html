@@ -187,6 +187,14 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
     <div class="alert" id="underwater" hidden></div>
   </section>
 
+  <section class="panel" id="hOrig" hidden>
+      <h2>Since day one</h2>
+      <div class="whatif-row"><span class="sub" id="hOrigLbl"></span><b class="num" id="hOrigPaid"></b></div>
+      <div class="bar" aria-hidden="true"><i id="hOrigBar" style="width:0"></i></div>
+      <div class="stats" id="hOrigStats"></div>
+      <p class="sub" style="margin:0" id="hOrigNote"></p>
+    </section>
+
   <section class="panel">
     <h3 class="ct">Balance over time</h3>
     <div class="legend lg2" id="chartLg"></div>
@@ -268,6 +276,11 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
       <label class="f">Planned monthly payment<input type="number" id="lPay" inputmode="decimal" step="0.01" min="0" required></label>
       <label class="f full">Unpaid interest included in that balance<input type="number" id="lInt" inputmode="decimal" step="0.01" min="0" placeholder="0.00"></label>
       <p class="sub full" style="margin:0">If your start date is a statement date, enter that statement's interest charge here. Your next payment pays it first.</p>
+      <p class="sub full" style="margin:0;font-weight:700">Original loan (for Since day one)</p>
+      <label class="f">Original amount<input type="number" id="lOAmt" inputmode="decimal" step="0.01" min="0" placeholder="0.00"></label>
+      <label class="f">Original date<input type="date" id="lODate"></label>
+      <label class="f">Term (years)<input type="number" id="lOTerm" inputmode="numeric" step="1" min="1" max="40" placeholder="30"></label>
+      <label class="f">Draw period (years)<input type="number" id="lODraw" inputmode="numeric" step="1" min="0" max="20" placeholder="10"></label>
       <button class="primary full" type="submit">Save loan</button>
     </form>
     <h2>Rate changes</h2>
@@ -300,6 +313,14 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
         <div class="stat"><b class="num" id="mPayoff">–</b><span>Payoff at plan</span></div>
       </div>
       <div class="alert" id="mUnder" hidden></div>
+    </section>
+
+    <section class="panel" id="mOrig" hidden>
+      <h2>Since day one</h2>
+      <div class="whatif-row"><span class="sub" id="mOrigLbl"></span><b class="num" id="mOrigPaid"></b></div>
+      <div class="bar" aria-hidden="true"><i id="mOrigBar" style="width:0"></i></div>
+      <div class="stats" id="mOrigStats"></div>
+      <p class="sub" style="margin:0" id="mOrigNote"></p>
     </section>
 
     <section class="panel" id="mChartPanel">
@@ -391,6 +412,10 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
         <label class="f">Monthly principal + interest<input type="number" id="mlPI" inputmode="decimal" step="0.01" min="0" required></label>
         <label class="f">Monthly escrow<input type="number" id="mlEsc" inputmode="decimal" step="0.01" min="0" placeholder="0.00"></label>
         <p class="sub full" style="margin:0">Use the principal balance after your last posted payment, and that payment's date as the start date. Escrow covers taxes and insurance and doesn't lower the balance.</p>
+        <p class="sub full" style="margin:0;font-weight:700">Original loan (for Since day one)</p>
+        <label class="f">Original amount<input type="number" id="mlOAmt" inputmode="decimal" step="0.01" min="0" placeholder="0.00"></label>
+        <label class="f">Original date<input type="date" id="mlODate"></label>
+        <label class="f">Term (years)<input type="number" id="mlOTerm" inputmode="numeric" step="1" min="1" max="40" placeholder="30"></label>
         <button class="primary full" type="submit">Save mortgage</button>
       </form>
     </details>
@@ -589,7 +614,7 @@ function render(){
     $('wSaved').textContent='All of it';$('wMonths').textContent='Pays off';$('wDate').textContent=fmtMonth(plus.end);
   }else{['wSaved','wMonths','wDate'].forEach(k=>$(k).textContent='–')}
   drawChart(H,base,hasWhatIf?plus:null,today);
-  renderList(H);renderRates();renderPlans();renderInterest(H,base,plus,hasWhatIf);header();
+  renderList(H);renderRates();renderPlans();renderInterest(H,base,plus,hasWhatIf);renderOrig('h',S.loan.orig,H.bal,hasWhatIf&&plus.ok?plus:base,null);header();
   renderSchedule(document.querySelector('input[name=scen]:checked').value==='base'||!hasWhatIf?base:plus,apr,!hasWhatIf||document.querySelector('input[name=scen]:checked').value==='base');
 }
 function renderSchedule(P,apr,isBase){
@@ -637,6 +662,38 @@ function renderInterest(H,base,plus,hasWhatIf){
   h+=`<div class="ikey"><span><i style="background:var(--dim)"></i>Paid</span><span><i style="background:var(--muted)"></i>Plan</span>${hasWhatIf?'<span><i style="background:var(--amber)"></i>With what-ifs</span><span><i style="background:var(--mint-soft);border:1px dashed var(--mint)"></i>Saved</span>':''}</div>`;
   B.innerHTML=h;
   $('iNote').textContent=(H.charged?'Paid so far counts the statement interest your logged payments covered. ':'')+'Still to pay assumes '+aprOn(todayDay()).toFixed(2)+'% holds.'+(hasWhatIf?'':' Add an extra monthly amount or a one-time payment above to see savings.');
+}
+// "Since day one": progress measured from the original loan, kept apart from tracking numbers.
+function monthsBetween(a,b){const x=fromDay(a),y=fromDay(b);return (y.getUTCFullYear()-x.getUTCFullYear())*12+(y.getUTCMonth()-x.getUTCMonth())-(y.getUTCDate()<x.getUTCDate()?1:0)}
+const ym=m=>{m=Math.max(0,Math.round(m));const y=Math.floor(m/12),r=m%12;return (y?y+'y ':'')+r+'m'};
+function renderOrig(p,o,bal,P,mtg){
+  const box=$(p+'Orig');
+  if(!o||!(o.amount>0)||!o.date){box.hidden=true;return}
+  box.hidden=false;
+  const today=todayDay(),od=toDay(o.date),paid=o.amount-bal,pct=Math.max(0,Math.min(100,paid/o.amount*100));
+  $(p+'OrigLbl').textContent='Paid off since '+fmtMonth(od);
+  $(p+'OrigPaid').textContent=money(Math.max(0,paid))+' · '+pct.toFixed(2)+'%';
+  $(p+'OrigBar').style.width=pct.toFixed(2)+'%';
+  const age=monthsBetween(od,today),termEnd=o.term?addMonth(od,o.term*12,fromDay(od).getUTCDate()):null;
+  const st=[['Original amount',money(o.amount)],['Loan age',ym(age)]];
+  if(termEnd) st.push(['Term ends',fmtMonth(termEnd)]);
+  let note='';
+  if(!mtg&&o.draw){const de=addMonth(od,o.draw*12,fromDay(od).getUTCDate()),left=monthsBetween(today,de);
+    st.push(['Draw period ends',fmtMonth(de)]);
+    note=left>0?'Draw period: '+ym(left)+' left. After that, any balance is repaid over the rest of the term.':'Draw period has ended; the balance is in repayment.'}
+  if(mtg&&o.term&&mtg.rate>0){
+    const r=mtg.rate/1200,n=o.term*12,pmt=o.amount*r/(1-Math.pow(1+r,-n));
+    const B=k=>Math.max(0,o.amount*Math.pow(1+r,k)-pmt*(Math.pow(1+r,k)-1)/r);
+    const k=Math.max(0,Math.min(n,age-1)),sb=B(k),ahead=sb-bal;
+    let j=k;while(j<n&&B(j)>bal+0.005)j++;
+    if(bal>sb){j=k;while(j>0&&B(j-1)<=bal)j--}
+    st.push(['vs. original schedule',(ahead>=0?money(ahead)+' ahead':money(-ahead)+' behind')]);
+    note='Original schedule: '+money(pmt)+'/mo for '+o.term+' years. You are '+(j>=k?ym(j-k)+' ahead':ym(k-j)+' behind')+' of it'+(ahead>=0?'':'')+'.';
+  }
+  if(P&&P.ok&&termEnd&&bal>0){const early=monthsBetween(P.end,termEnd);
+    note+=(note?' ':'')+'At your plan, payoff is '+fmtMonth(P.end)+(early>0?', '+ym(early)+' before the term ends.':'.')}
+  $(p+'OrigStats').innerHTML=st.map(([l,v])=>`<div class="stat"><b class="num">${v}</b><span>${l}</span></div>`).join('');
+  $(p+'OrigNote').textContent=note;
 }
 function renderPlans(){
   const L=$('planList'),ps=(S.planned||[]).slice().sort((a,b)=>a.date<b.date?-1:1);
@@ -699,7 +756,7 @@ function renderRates(){
 }
 function esc(s){return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),1800)}
-function fillLoanForm(){$('lName').value=S.loan.name;$('lBal').value=S.loan.balance;$('lStart').value=S.loan.start;$('lApr').value=S.loan.apr;$('lPay').value=S.loan.payment;$('lInt').value=S.loan.startInterest||''}
+function fillLoanForm(){$('lName').value=S.loan.name;$('lBal').value=S.loan.balance;$('lStart').value=S.loan.start;$('lApr').value=S.loan.apr;$('lPay').value=S.loan.payment;$('lInt').value=S.loan.startInterest||'';const o=S.loan.orig||{};$('lOAmt').value=o.amount||'';$('lODate').value=o.date||'';$('lOTerm').value=o.term||'';$('lODraw').value=o.draw||''}
 
 // Two-tap delete
 function armedDelete(e,attr,fn){
@@ -721,7 +778,8 @@ document.querySelectorAll('input[name=etype]').forEach(r=>r.addEventListener('ch
   const t=curType();$('addBtn').textContent='Add '+LABELS[t].toLowerCase();
   $('pAmt').value=t==='payment'?(S.loan.payment||''):'';$('pAmt').focus()}));
 $('loanForm').addEventListener('submit',e=>{e.preventDefault();
-  S.loan={name:$('lName').value.trim()||'Home equity line',balance:parseFloat($('lBal').value)||0,start:$('lStart').value,apr:parseFloat($('lApr').value)||0,payment:parseFloat($('lPay').value)||0,startInterest:parseFloat($('lInt').value)||0};
+  S.loan=Object.assign(S.loan||{},{name:$('lName').value.trim()||'Home equity line',balance:parseFloat($('lBal').value)||0,start:$('lStart').value,apr:parseFloat($('lApr').value)||0,payment:parseFloat($('lPay').value)||0,startInterest:parseFloat($('lInt').value)||0,
+    orig:{amount:parseFloat($('lOAmt').value)||0,date:$('lODate').value||'',term:parseInt($('lOTerm').value)||0,draw:parseInt($('lODraw').value)||0}});
   S.example=false;save();$('pAmt').value=S.loan.payment;render();toast('Loan saved')});
 $('rateForm').addEventListener('submit',e=>{e.preventDefault();S.example=false;
   S.rates.push({id:uid(),date:$('rDate').value,apr:parseFloat($('rApr').value)});save();$('rApr').value='';render();toast('Rate change added')});
@@ -855,6 +913,7 @@ function renderMtg(){
     $('mwDate').textContent=fmtMonth(plus.end);
   }else ['mwSaved','mwMonths','mwDate'].forEach(k=>$(k).textContent='–');
   drawChart(H,base,hasW?plus:null,today,'mChart');
+  renderOrig('m',M.orig,H.bal,hasW&&plus.ok?plus:base,{rate:+M.rate});
   // interest
   $('miPaid').textContent=money(H.int);
   $('miBase').textContent=base.ok?money(base.interest):'No payoff';
@@ -888,7 +947,7 @@ function renderMtg(){
   T.innerHTML=h;
   header();
 }
-function fillMLoan(){const M=MD();$('mlName').value=M.name||'';$('mlBal').value=M.balance||'';$('mlStart').value=M.start||'';$('mlRate').value=M.rate||'';$('mlDay').value=M.day||1;$('mlPI').value=M.pi||'';$('mlEsc').value=M.escrow||'';$('mExStart').value=M.extraStart||''}
+function fillMLoan(){const M=MD();$('mlName').value=M.name||'';$('mlBal').value=M.balance||'';$('mlStart').value=M.start||'';$('mlRate').value=M.rate||'';$('mlDay').value=M.day||1;$('mlPI').value=M.pi||'';$('mlEsc').value=M.escrow||'';$('mExStart').value=M.extraStart||'';const mo=M.orig||{};$('mlOAmt').value=mo.amount||'';$('mlODate').value=mo.date||'';$('mlOTerm').value=mo.term||''}
 function fillMPay(){
   if(!mReady())return;
   const M=MD(),H=mHistory(),extra=+M.extra||0,hasW=extra>0||(M.planned||[]).length;
@@ -902,7 +961,8 @@ function header(){
 }
 $('mLoanForm').addEventListener('submit',e=>{e.preventDefault();S.example=false;const M=MD();
   Object.assign(M,{name:$('mlName').value.trim(),balance:parseFloat($('mlBal').value)||0,start:$('mlStart').value,rate:parseFloat($('mlRate').value)||0,
-    day:Math.min(28,Math.max(1,parseInt($('mlDay').value)||1)),pi:parseFloat($('mlPI').value)||0,escrow:parseFloat($('mlEsc').value)||0});
+    day:Math.min(28,Math.max(1,parseInt($('mlDay').value)||1)),pi:parseFloat($('mlPI').value)||0,escrow:parseFloat($('mlEsc').value)||0,
+    orig:{amount:parseFloat($('mlOAmt').value)||0,date:$('mlODate').value||'',term:parseInt($('mlOTerm').value)||0}});
   save();renderMtg();fillMPay();$('mSettings').open=false;toast('Mortgage saved')});
 $('mPayForm').addEventListener('submit',e=>{e.preventDefault();S.example=false;const M=MD();
   M.payments.push({id:uid(),date:$('mpDate').value,principal:parseFloat($('mpPrin').value)||0,interest:parseFloat($('mpInt').value)||0,escrow:parseFloat($('mpEsc').value)||0,note:$('mpNote').value.trim()});
