@@ -127,6 +127,8 @@ table.sched{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixe
 .sched tfoot td{position:sticky;bottom:0;background:var(--panel-2);font-weight:800;border-top:1px solid var(--line)}
 .sync{display:block;text-align:right;font-size:12px;color:var(--mint);font-weight:700}
 .sync.warn{color:var(--amber)}
+.ver{display:block;text-align:right;font-size:11px;color:var(--dim);font-weight:700;letter-spacing:.04em}
+.verfoot{text-align:center;font-size:12px;color:var(--dim);margin:8px 0 0}
 #exampleBanner,#mSetupBanner,#underwater,#mUnder{display:none!important}
 .confirm{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:12px;font-weight:700;font-size:14px}
 .bkgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
@@ -155,7 +157,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 <div class="wrap">
   <header>
     <h1 id="viewTitle">HELOC Mortgage Payoff Plan<small id="loanName">Home equity line</small></h1>
-    <span class="sub num"><span id="asOf"></span><span class="sync" id="syncState"></span></span>
+    <span class="sub num"><span id="asOf"></span><span class="sync" id="syncState"></span><span class="ver" id="appVer"></span></span>
   </header>
 
   <div class="tabbar">
@@ -441,11 +443,13 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
     </div>
   </details>
 </div>
+<p class="sub verfoot" id="appVerFoot"></p>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
 (function(){
 const KEY='heloc-payoff-v1';
+const APP_VERSION='16',APP_BUILD='Nov 5, 2026';
 const $=id=>document.getElementById(id);
 const DAY=86400000;
 const toDay=s=>{const[y,m,d]=s.split('-').map(Number);return Date.UTC(y,m-1,d)/DAY};
@@ -991,6 +995,7 @@ $('planForm').addEventListener('submit',e=>{e.preventDefault();S.example=false;
 $('planList').addEventListener('click',e=>armedDelete(e,'data-delplan',id=>{S.planned=S.planned.filter(p=>p.id!==id);save();render();toast('Future payment deleted')}));
 document.querySelectorAll('input[name=scen]').forEach(r=>r.addEventListener('change',render));
 $('mfDate').value=iso(addMonth(todayDay(),2,15));
+$('appVer').textContent='v'+APP_VERSION;$('appVerFoot').textContent='HELOC Mortgage Payoff Plan · Version '+APP_VERSION+' · '+APP_BUILD;
 function boot(){
   if(!Array.isArray(S.planned)) S.planned=[];
   (S.view==='mtg'?$('vMtg'):$('vHeloc')).checked=true;
