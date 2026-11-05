@@ -449,7 +449,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 <script>
 (function(){
 const KEY='heloc-payoff-v1';
-const APP_VERSION='16',APP_BUILD='Nov 5, 2026';
+const APP_VERSION='17',APP_BUILD='Nov 5, 2026';
 const $=id=>document.getElementById(id);
 const DAY=86400000;
 const toDay=s=>{const[y,m,d]=s.split('-').map(Number);return Date.UTC(y,m-1,d)/DAY};
@@ -800,7 +800,10 @@ $('copyBackup').addEventListener('click',()=>{
 $('showRestore').addEventListener('click',()=>{$('restoreBox').hidden=!$('restoreBox').hidden});
 function parseBackup(text){const d=JSON.parse(text);if(!d||!d.loan||!Array.isArray(d.payments))throw 0;return d}
 function applyBackup(d){
-  const keepMtg=S.mtg;S=Object.assign({rates:[],extra:0,planned:[]},d);if(d.example!==true)S.example=false;if(!d.mtg&&keepMtg)S.mtg=keepMtg;
+  const prev=S;S=Object.assign({rates:[],extra:0,planned:[]},d);if(d.example!==true)S.example=false;
+  if(!d.mtg&&prev.mtg)S.mtg=prev.mtg;
+  // An older backup may lack newer settings (like the original loan details): keep what's already here
+  for(const k of ['loan','mtg']){const cur=prev[k],nw=S[k];if(cur&&nw&&nw!==cur)for(const f in cur)if(!(f in nw))nw[f]=cur[f]}
   save();boot();$('restoreBox').hidden=true;$('restoreConfirm').hidden=true;toast('Backup restored');
 }
 // File backup: Claude's save prompt inside Claude, a normal download elsewhere (GitHub Pages)
