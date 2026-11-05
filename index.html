@@ -195,6 +195,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
       <div class="bar" aria-hidden="true"><i id="hOrigBar" style="width:0"></i></div>
       <div class="stats" id="hOrigStats"></div>
       <p class="sub" style="margin:0" id="hOrigNote"></p>
+      <button type="button" class="primary" id="hOrigAdd" hidden>Add original loan details</button>
     </section>
 
   <section class="panel">
@@ -323,6 +324,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
       <div class="bar" aria-hidden="true"><i id="mOrigBar" style="width:0"></i></div>
       <div class="stats" id="mOrigStats"></div>
       <p class="sub" style="margin:0" id="mOrigNote"></p>
+      <button type="button" class="primary" id="mOrigAdd" hidden>Add original loan details</button>
     </section>
 
     <section class="panel" id="mChartPanel">
@@ -449,7 +451,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 <script>
 (function(){
 const KEY='heloc-payoff-v1';
-const APP_VERSION='17',APP_BUILD='Nov 5, 2026';
+const APP_VERSION='18',APP_BUILD='Nov 5, 2026';
 const $=id=>document.getElementById(id);
 const DAY=86400000;
 const toDay=s=>{const[y,m,d]=s.split('-').map(Number);return Date.UTC(y,m-1,d)/DAY};
@@ -671,9 +673,11 @@ function renderInterest(H,base,plus,hasWhatIf){
 function monthsBetween(a,b){const x=fromDay(a),y=fromDay(b);return (y.getUTCFullYear()-x.getUTCFullYear())*12+(y.getUTCMonth()-x.getUTCMonth())-(y.getUTCDate()<x.getUTCDate()?1:0)}
 const ym=m=>{m=Math.max(0,Math.round(m));const y=Math.floor(m/12),r=m%12;return (y?y+'y ':'')+r+'m'};
 function renderOrig(p,o,bal,P,mtg){
-  const box=$(p+'Orig');
-  if(!o||!(o.amount>0)||!o.date){box.hidden=true;return}
-  box.hidden=false;
+  const box=$(p+'Orig');box.hidden=false;
+  const missing=!o||!(o.amount>0)||!o.date;
+  $(p+'OrigAdd').hidden=!missing;
+  [p+'OrigLbl',p+'OrigPaid'].forEach(id=>$(id).parentNode.hidden=missing);$(p+'OrigBar').parentNode.hidden=missing;
+  if(missing){$(p+'OrigStats').innerHTML='';$(p+'OrigNote').textContent='Add the original loan amount and date to see how much you\u2019ve paid off since the loan began.';return}
   const today=todayDay(),od=toDay(o.date),paid=o.amount-bal,pct=Math.max(0,Math.min(100,paid/o.amount*100));
   $(p+'OrigLbl').textContent='Paid off since '+fmtMonth(od);
   $(p+'OrigPaid').textContent=money(Math.max(0,paid))+' · '+pct.toFixed(2)+'%';
@@ -998,6 +1002,7 @@ $('planForm').addEventListener('submit',e=>{e.preventDefault();S.example=false;
 $('planList').addEventListener('click',e=>armedDelete(e,'data-delplan',id=>{S.planned=S.planned.filter(p=>p.id!==id);save();render();toast('Future payment deleted')}));
 document.querySelectorAll('input[name=scen]').forEach(r=>r.addEventListener('change',render));
 $('mfDate').value=iso(addMonth(todayDay(),2,15));
+[['hOrigAdd','settings','lOAmt'],['mOrigAdd','mSettings','mlOAmt']].forEach(([b,d,f])=>$(b).addEventListener('click',()=>{$(d).open=true;const el=$(f);el.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>el.focus(),350)}));
 $('appVer').textContent='v'+APP_VERSION;$('appVerFoot').textContent='HELOC Mortgage Payoff Plan · Version '+APP_VERSION+' · '+APP_BUILD;
 function boot(){
   if(!Array.isArray(S.planned)) S.planned=[];
