@@ -29,7 +29,10 @@ body{color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.45;
   -webkit-font-smoothing:antialiased}
 .wrap{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
 .num{font-variant-numeric:tabular-nums}
-header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.appicon{width:42px;height:42px;border-radius:10px;flex:none;display:block;box-shadow:0 0 0 1px var(--line)}
+@media (hover:hover) and (pointer:fine){.appicon{width:38px;height:38px;border-radius:9px}}
 h1{font-size:20px;font-weight:800;margin:0;letter-spacing:-.01em}
 h1 small{display:block;font-size:13px;font-weight:600;color:var(--muted);letter-spacing:0}
 h2{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:0}
@@ -156,7 +159,8 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 
 <div class="wrap">
   <header>
-    <h1 id="viewTitle">HELOC Mortgage Payoff Plan<small id="loanName">Home equity line</small></h1>
+    <div class="brand"><img class="appicon" id="appIcon" alt="" width="42" height="42">
+    <h1 id="viewTitle">HELOC Mortgage Payoff Plan<small id="loanName">Home equity line</small></h1></div>
     <span class="sub num"><span id="asOf"></span><span class="sync" id="syncState"></span><span class="ver" id="appVer"></span></span>
   </header>
 
@@ -451,7 +455,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 <script>
 (function(){
 const KEY='heloc-payoff-v1';
-const APP_VERSION='18',APP_BUILD='Nov 5, 2026';
+const APP_VERSION='19',APP_BUILD='Nov 19, 2026';
 const $=id=>document.getElementById(id);
 const DAY=86400000;
 const toDay=s=>{const[y,m,d]=s.split('-').map(Number);return Date.UTC(y,m-1,d)/DAY};
@@ -1003,6 +1007,7 @@ $('planList').addEventListener('click',e=>armedDelete(e,'data-delplan',id=>{S.pl
 document.querySelectorAll('input[name=scen]').forEach(r=>r.addEventListener('change',render));
 $('mfDate').value=iso(addMonth(todayDay(),2,15));
 [['hOrigAdd','settings','lOAmt'],['mOrigAdd','mSettings','mlOAmt']].forEach(([b,d,f])=>$(b).addEventListener('click',()=>{$(d).open=true;const el=$(f);el.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>el.focus(),350)}));
+try{const ic=document.querySelector('link[rel="apple-touch-icon"]');if(ic)$('appIcon').src=ic.href}catch(e){}
 $('appVer').textContent='v'+APP_VERSION;$('appVerFoot').textContent='HELOC Mortgage Payoff Plan · Version '+APP_VERSION+' · '+APP_BUILD;
 function boot(){
   if(!Array.isArray(S.planned)) S.planned=[];
