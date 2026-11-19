@@ -15,7 +15,7 @@
 :root{
   --bg:#07080A; --panel:#111317; --panel-2:#171A1F; --line:#22262D;
   --fg:#E6E8EB; --muted:#8B9099; --dim:#5D626B;
-  --mint:#3CC79A; --mint-soft:rgba(60,199,154,.16); --amber:#E3A04F; --amber-ink:#1A1206; --red:#E5675B;
+  --mint:#3D9BFF; --mint-soft:rgba(61,155,255,.18); --amber:#E3A04F; --amber-ink:#1A1206; --red:#E5675B;
   --font:"Nunito Sans",Avenir,"Avenir Next","Segoe UI",system-ui,sans-serif;
   color-scheme:dark;
 }
@@ -75,7 +75,7 @@ input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0}
 input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.7)}
 input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--mint);outline-offset:1px}
 button{font:inherit;font-weight:800;font-size:14px;border-radius:9px;padding:10px 14px;cursor:pointer;border:1px solid var(--line);background:var(--panel-2);color:var(--fg)}
-button.primary{background:var(--mint);color:#06130E;border-color:var(--mint)}
+button.primary{background:var(--mint);color:#03101F;border-color:var(--mint)}
 button.ghost{background:transparent}
 button.danger{color:var(--red)}
 .list{display:flex;flex-direction:column}
@@ -93,12 +93,12 @@ details.panel>summary::-webkit-details-marker{display:none}
 details.panel>summary::after{content:"+";color:var(--muted);font-weight:800;font-size:18px}
 details.panel[open]>summary::after{content:"–"}
 .btns{display:flex;gap:8px;flex-wrap:wrap}
-.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--mint);color:#06130E;font-weight:800;padding:10px 16px;border-radius:99px;opacity:0;transition:opacity .25s;pointer-events:none}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--mint);color:#03101F;font-weight:800;padding:10px 16px;border-radius:99px;opacity:0;transition:opacity .25s;pointer-events:none}
 .toast.on{opacity:1}
 .seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
 .seg input{position:absolute;opacity:0;pointer-events:none}
 .seg label{text-align:center;padding:9px 4px;border-radius:7px;font-weight:800;font-size:13px;color:var(--muted);cursor:pointer}
-.seg input:checked+label{background:var(--mint);color:#06130E}
+.seg input:checked+label{background:var(--mint);color:#03101F}
 .seg input:focus-visible+label{outline:2px solid var(--mint);outline-offset:1px}
 .seg.seg2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .sched-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
@@ -455,7 +455,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 <script>
 (function(){
 const KEY='heloc-payoff-v1';
-const APP_VERSION='19',APP_BUILD='Nov 19, 2026';
+const APP_VERSION='20',APP_BUILD='Nov 19, 2026';
 const $=id=>document.getElementById(id);
 const DAY=86400000;
 const toDay=s=>{const[y,m,d]=s.split('-').map(Number);return Date.UTC(y,m-1,d)/DAY};
