@@ -128,8 +128,9 @@ table.sched{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixe
 .tsum span{display:inline-block;margin-right:14px}
 .tsum b{color:var(--fg);font-weight:800;margin-left:4px}
 .sched tfoot td{position:sticky;bottom:0;background:var(--panel-2);font-weight:800;border-top:1px solid var(--line)}
-.sync{display:block;text-align:right;font-size:12px;color:var(--mint);font-weight:700}
-.sync.warn{color:var(--amber)}
+.sync{display:none;text-align:right;font-size:12px;font-weight:700}
+.sync.warn{display:block;color:var(--amber)}
+#asOf,#appVer{display:none}
 .ver{display:block;text-align:right;font-size:11px;color:var(--dim);font-weight:700;letter-spacing:.04em}
 .verfoot{text-align:center;font-size:12px;color:var(--dim);margin:8px 0 0}
 #exampleBanner,#mSetupBanner,#underwater,#mUnder{display:none!important}
@@ -455,7 +456,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 <script>
 (function(){
 const KEY='heloc-payoff-v1';
-const APP_VERSION='20',APP_BUILD='Nov 19, 2026';
+const APP_VERSION='21',APP_BUILD='Nov 19, 2026';
 const $=id=>document.getElementById(id);
 const DAY=86400000;
 const toDay=s=>{const[y,m,d]=s.split('-').map(Number);return Date.UTC(y,m-1,d)/DAY};
@@ -497,7 +498,7 @@ addEventListener('pagehide',flush);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flush()});
 async function pushCloud(retry){
   try{cloudDirty=false;await cloudRef.set({json:JSON.stringify(S),updated:S.updated});setSync('Saved to your account')}
-  catch(e){if(!retry&&e&&e.code==='unavailable'){setTimeout(()=>pushCloud(true),800+Math.random()*800)}else setSync('Saved on this device only. Copy a backup to be safe.',true)}
+  catch(e){if(!retry&&e&&e.code==='unavailable'){setTimeout(()=>pushCloud(true),800+Math.random()*800)}else setSync('Not saved to your account. Copy a backup.',true)}
 }
 
 function aprOn(day){
@@ -1037,7 +1038,7 @@ setSync('Saved on this device');
     }else if(!S.example||(S.mtg&&+S.mtg.balance>0)){
       await pushCloud();
     }else setSync('Saved to your account');
-  }catch(e){setSync('Saved on this device only. Copy a backup to be safe.',true)}
+  }catch(e){setSync('Not saved to your account. Copy a backup.',true)}
 })();
 })();
 </script>
