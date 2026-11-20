@@ -25,7 +25,7 @@ html,body{margin:0}
 img{max-width:100%}
 html,body{background:var(--bg)}
 body{color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.45;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 48px;
   -webkit-font-smoothing:antialiased}
 .wrap{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
 .num{font-variant-numeric:tabular-nums}
@@ -456,7 +456,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 <script>
 (function(){
 const KEY='heloc-payoff-v1';
-const APP_VERSION='22',APP_BUILD='Nov 19, 2026';
+const APP_VERSION='23',APP_BUILD='Nov 19, 2026';
 const $=id=>document.getElementById(id);
 const DAY=86400000;
 const toDay=s=>{const[y,m,d]=s.split('-').map(Number);return Date.UTC(y,m-1,d)/DAY};
